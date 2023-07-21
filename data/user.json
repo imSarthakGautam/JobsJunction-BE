@@ -1,0 +1,13 @@
+{
+  "email": "test@gamil.com",
+  "username": "sarthak",
+  "fullname": "Sarthak Gautam",
+  "title": "Softwawre Developer",
+  "skills": ["Js", "React", "Java"],
+  "address": "kathmandu, Nepal",
+  "job_type": "Full time",
+  "id": 1,
+  "is_active": true,
+  "followers": ["username12", "username 123", "username1234"],
+  "followings": ["username12", "username 123", "username1234"]
+}
