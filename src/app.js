@@ -3,7 +3,7 @@ const fs= require("fs");
 const cors = require("cors");
 
 
-const app= express();gi
+const app= express();
 app.use(cors());
 const PORT = 5000;
 
