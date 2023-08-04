@@ -125,7 +125,7 @@ app.get("/", (req, res) => {
 });
 
 //read file and send content of files as response
-app.get("/api/v1/posts", (req, res) => {
+app.get("/api/v1/posts",  (req, res) => {
   const posts = fs.readFileSync("./data/posts.json", "utf-8").toString();
   res.status(200).send(posts);
 });
@@ -137,8 +137,14 @@ app.get("/api/v1/user", async (req, res) => {
   res.status(200).send(user[0]);
 });
 
-app.post("/api/v1/user", (req, resp)=>{
-  const id= req.query.id;
+app.post("/api/v1/user", async (req, resp)=>{
+  //const id= req.query.id;
+  const lastUser = await User.findOne({}, null, { sort: { id: -1 } });
+
+  let id = 1;
+  if (lastUser) {
+    id = lastUser.id + 1;
+  }
 const newUser={
     
       email: "test@gamil.com",
