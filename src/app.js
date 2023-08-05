@@ -2,8 +2,9 @@ const express = require("express");
 const fs = require("fs");
 const cors = require("cors");
 const mongoose = require("mongoose"); //database
-
+const bodyParser = require("body-parser");
 const app = express();
+app.use(bodyParser.json());
 app.use(cors());
 const PORT = 5000;
 
@@ -13,12 +14,13 @@ const mongoDbURL = "mongodb://localhost:27017/lec";
 mongoose.connect(mongoDbURL, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-});
+}); 
 
 const userSchema = new mongoose.Schema({
   email: String,
   username: String,
   fullname: String,
+  password : String,
   title: String,
   skills: [{ type: String }],
   address: String,
@@ -134,27 +136,31 @@ app.get("/api/v1/user", async (req, res) => {
  
   // const user = fs.readFileSync("./data/user.json", "utf-8").toString();
   const user= await User.find({id: 1});
+  // find gives first found 
   res.status(200).send(user[0]);
 });
 
 app.post("/api/v1/user", async (req, resp)=>{
   //const id= req.query.id;
   const lastUser = await User.findOne({}, null, { sort: { id: -1 } });
-
+// searching in descending order -1
+// findOne is better for finding 1 value
+const {username, email,fullname, title, job_type, skills, address, password} = req.body;
   let id = 1;
   if (lastUser) {
     id = lastUser.id + 1;
   }
 const newUser={
-    
-      email: "test@gamil.com",
-      username: "sarthak",
-      fullname: "Sarthak Gautam",
-      title: "Software Developer",
-      skills: ["Js", "React", "Java"],
-      address: "kathmandu, Nepal",
-      job_type: "Full time",
-      id: 1,
+  // email : email,
+      email,   
+      password,     
+      username,
+      fullname,
+      title,
+      skills,
+      address,
+      job_type,
+      id,
       is_active: true,
       followers: ["username12", "username 123", "username1234"],
       followings: ["username12", "username 123", "username1234"],
