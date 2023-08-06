@@ -148,6 +148,7 @@ app.post("/api/v1/login", async (req, res) => {
     password: req.body.password,
     is_active: true,
   });
+  
   if (user) {
     res.status(200).send({ message: "Login successfull" });
   } else {
