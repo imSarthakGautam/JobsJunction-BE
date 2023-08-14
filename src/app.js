@@ -1,26 +1,28 @@
 const express = require("express");
 const fs = require("fs");
 const cors = require("cors");
-const mongoose = require("mongoose"); //database
+const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
+
 const app = express();
+
 app.use(bodyParser.json());
 app.use(cors());
-const PORT = 5000;
 
-//mongodb connection string
+const PORT = 5000; // api port
 
-const mongoDbURL = "mongodb://localhost:27017/lec";
-mongoose.connect(mongoDbURL, {
+const mongoDbURI = "mongodb://localhost:27017/lec"; // db connection string
+
+mongoose.connect(mongoDbURI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-}); 
+});
 
 const userSchema = new mongoose.Schema({
   email: String,
-  username:{ type : String, unique : true },
+  username: { type: String, unique: true },
+  password: String,
   fullname: String,
-  password : String,
   title: String,
   skills: [{ type: String }],
   address: String,
@@ -31,115 +33,36 @@ const userSchema = new mongoose.Schema({
   followings: [{ type: String }],
 });
 
-//posts
-const UserSchemaPosts = new mongoose.Schema({
+const postSchema = new mongoose.Schema({
   title: String,
   description: String,
   location: String,
-  title: String,
   job_type: String,
   pay_rate_per_hr_dollar: Number,
   skills: [{ type: String }],
   liked_by: [{ type: String }],
   viewed_by: [{ type: String }],
-  id: Number,
-  user_id: String,
+  id: { type: Number, unique: true },
+  user_id: Number,
   post_by_username: String,
   post_by_fullname: String,
-  post_date: String,
-  comments: [{ type: String }],
+  post_date: { type: Date, default: new Date() },
+  comments: [{ type: Object }],
 });
 
-const Post = mongoose.model("posts", UserSchemaPosts);
-
-Post.createCollection()
-  .then((col) => {
-    console.log("Collection", "Created");
-  })
-  .catch((err) => {
-    console.log(err);
-  });
-
-// Post.create([{
-//   title: "Full Stack Developer",
-//   description: "For a client project Full Stack Developer is required",
-//   location: "Kathmandu",
-//   job_type: "Full Time",
-//   pay_rate_per_hr_dollar: 100.0,
-//   skills: ["PHP", "JS", "HTML"],
-//   liked_by: ["test111", "test1", "test123"],
-//   viewed_by: ["test111", "test1", "test123"],
-//   id: 2,
-//   user_id: 1,
-//   post_by_username: "test123",
-//   post_by_fullname: "Royal Shrestha",
-//   post_date: "2023-06-10T09:24:07.659034",
-//   comments: [],
-// },
-// {
-//   title: "AI/ML Developer Required",
-//   description: "For a client project AI/ML Developer is required",
-//   location: "Bhairahawa",
-//   job_type: "Full Time",
-//   pay_rate_per_hr_dollar: 69.0,
-//   skills: ["PHP", "JS", "HTML"],
-//   liked_by: ["test111", "test1", "test123"],
-//   viewed_by: ["test111", "test1", "test123"],
-//   id: 3,
-//   user_id: 2,
-//   post_by_username: "test321",
-//   post_by_fullname: "Prajol Ghimire",
-//   post_date: "2023-06-10T21:51:10.643105",
-//   comments: [],
-// },
-// {
-//   title: "PHP Developer Required",
-//   description: "For a client project PHP Developer is required",
-//   location: "Kathmandu",
-//   job_type: "Full Time",
-//   pay_rate_per_hr_dollar: 10.0,
-//   skills: ["PHP", "JS", "HTML"],
-//   liked_by: ["test111", "test1", "test123"],
-//   viewed_by: ["test111", "test1", "test123"],
-//   id: 4,
-//   user_id: 3,
-//   post_by_username: "test111",
-//   post_by_fullname: "Prabin Joshi",
-//   post_date: "2023-06-10T21:53:40.698655",
-//   comments: [],
-// },
-
-// ]).then(() => {
-//   console.log("Posts created");
-// });
-
-//---POSTS ENDS
-
-const User = mongoose.model("user", userSchema);
-User.createCollection()
-  .then((col) => console.log("Collection", " created"))
-  .catch((err) => console.log(err));
-
-
-// http://localhost:5000 then this function will be called
+// http://localhost:5000 or http://localhost:5000/
 app.get("/", (req, res) => {
-  res.status(200).send("This is response from DB");
+  res.status(200).send({ status: "OK", message: "App is running" });
 });
 
-//read file and send content of files as response
-app.get("/api/v1/posts",  (req, res) => {
-  const posts = fs.readFileSync("./data/posts.json", "utf-8").toString();
-  res.status(200).send(posts);
-});
+/*************** USER APIs begins ********************/
+const User = mongoose.model("user", userSchema);
 
 app.get("/api/v1/user", async (req, res) => {
- 
   // const user = fs.readFileSync("./data/user.json", "utf-8").toString();
-  const user= await User.find({id: 1});
-  // find gives first found 
-  res.status(200).send(user[0]);
+  const users = await User.find({ id: 1 });
+  res.status(200).send(users[0]);
 });
-
 
 // login api
 app.post("/api/v1/login", async (req, res) => {
@@ -148,60 +71,121 @@ app.post("/api/v1/login", async (req, res) => {
     password: req.body.password,
     is_active: true,
   });
-  
   if (user) {
-    res.status(200).send({ message: "Login successfull" });
+    res.status(200).send({ message: "Login successfull", data: user });
   } else {
-    res.status(404).send({ error: "Invalid username or password" });
+    res.status(400).send({ error: "Invalid username or password" });
   }
 });
 
-
-app.post("/api/v1/user", async (req, resp)=>{
-  //const id= req.query.id;
+app.post("/api/v1/user", async (req, res) => {
   const lastUser = await User.findOne({}, null, { sort: { id: -1 } });
-// searching in descending order -1
-// findOne is better for finding 1 value
-const {username, email,fullname, title, job_type, skills, address, password} = req.body;
 
-const usernameUser = await User.findOne({ username });
-if (usernameUser ){
-  return resp.status(404).send({error : "Username already exists"});
-}
+  const {
+    username,
+    email,
+    fullname,
+    title,
+    job_type,
+    skills,
+    address,
+    password,
+  } = req.body;
+
+  const usernameUser = await User.findOne({ username });
+  if (usernameUser) {
+    return res.status(400).send({ error: "Username already taken" });
+  }
 
   let id = 1;
   if (lastUser) {
     id = lastUser.id + 1;
   }
-const newUser={
-  // email : email,
-      email,   
-      password,     
-      username,
-      fullname,
-      title,
-      skills,
-      address,
-      job_type,
-      id,
-      is_active: true,
-      followers: ["username12", "username 123", "username1234"],
-      followings: ["username12", "username 123", "username1234"],
-    };
+  const newUser = {
+    email: email,
+    password,
+    username,
+    fullname,
+    title,
+    skills,
+    address,
+    job_type,
+    id,
+    is_active: true,
+    followers: [],
+    followings: [],
+  };
+  User.create(newUser)
+    .then((createdUser) => {
+      console.log("User created");
+      res.status(200).send(createdUser);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send({ error: "Can not process your request" });
+    });
+});
+/*************** USER APIs begins ********************/
 
+/*************** POST APIs begins ********************/
 
-    User.create(newUser)
-    .then((createdUser)=>{
-      console.log("User Created");
-    resp.status(200).send(createdUser);
-  })
-  .catch((err) => {
-    console.error(err);
-    resp.status(500).send({ error : " Cannot process your result"});
-  });
+const Post = mongoose.model("post", postSchema);
+
+// read file and send content of file as response
+app.get("/api/v1/posts", async (req, res) => {
+  const posts = await Post.find({}, null, { sort: { post_date: -1 } });
+  res.status(200).send(posts);
 });
 
+// create new record in db
+app.post("/api/v1/post", async (req, res) => {
+  const lastPost = await Post.findOne({}, null, { sort: { id: -1 } });
+
+  const {
+    title,
+    description,
+    location,
+    job_type,
+    pay_rate_per_hr_dollar,
+    skills,
+    user_id,
+    post_by_username,
+    post_by_fullname,
+  } = req.body;
+
+  let id = 1;
+  if (lastPost) {
+    id = lastPost.id + 1;
+  }
+  const newPost = {
+    title,
+    description,
+    location,
+    job_type,
+    pay_rate_per_hr_dollar,
+    skills,
+    liked_by: [],
+    viewed_by: [],
+    id,
+    user_id,
+    post_by_username,
+    post_by_fullname,
+    post_date: new Date(),
+    comments: [],
+  };
+  Post.create(newPost)
+    .then((createdPost) => {
+      console.log("Post created");
+      res.status(200).send(createdPost);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send({ error: "Can not process your request" });
+    });
+});
+
+/*************** POST APIs begins ********************/
 
 app.listen(PORT, () => {
-  console.log("App is running on port" + PORT);
+  console.log("App is running on port " + PORT);
 });
