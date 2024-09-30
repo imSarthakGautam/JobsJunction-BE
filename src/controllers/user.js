@@ -21,6 +21,7 @@ const loginUser = async (req, res) => {
   }
 };
 
+
 const signUpUser = async (req, res) => {
   console.log("sign up");
   const lastUser = await User.findOne({}, null, { sort: { id: -1 } });
