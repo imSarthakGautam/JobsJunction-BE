@@ -1,2 +1,2 @@
 # lec-jobs-be
-Backend portion of lec-jobs-fe
+BE API for LEC Jobs Portal
